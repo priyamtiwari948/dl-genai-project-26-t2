@@ -25,7 +25,7 @@ Prediction "C D A" → lowest score
 
 ## Models Built
 
-In this project I developed three unique models, trained, and evaluated as part of this project — meeting the requirement of one from-scratch model, one pretrained model, and one additional model of choice.
+In this project I developed, trained, and evaluated three unique models — meeting the requirement: one from-scratch model, one pretrained model, and one additional model of choice.
 
 | # | Model | Type | Kaggle MAP@3 Score |
 |---|-------|------|---------------------|
