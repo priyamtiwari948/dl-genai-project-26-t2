@@ -23,15 +23,31 @@ Prediction "C D A" → lowest score
 
 ---
 
+## Repository Structure
+
+```
+├── Kaggle_notebook.ipynb              # Complete end-to-end notebook (EDA → baseline → all 3 models → comparison)
+├── EDA.ipynb                          # Standalone exploratory data analysis
+├── baseline model.ipynb               # Baseline: TF-IDF + Cosine Similarity (no training)
+├── Logistic Regression.ipynb          # Model 1: TF-IDF + Logistic Regression
+├── Scratch model.ipynb                # Model 2: BiLSTM + Attention (built from scratch)
+├── ELECTRA Base Discriminator.ipynb   # Model 3: Fine-tuned ELECTRA-base-discriminator
+└── README.md
+```
+
+---
+
 ## Models Built
 
-In this project I developed, trained, and evaluated three unique models — meeting the requirement: one from-scratch model, one pretrained model, and one additional model of choice.
+I developed, trained, and evaluated three unique models — meeting the requirement of one from-scratch model, one pretrained model, and one additional model of choice.
 
 | # | Model | Type | Kaggle MAP@3 Score |
 |---|-------|------|---------------------|
 | 1 | BiLSTM + Attention (from scratch) | Custom architecture, no pretrained weights | 0.71238 |
 | 2 | Logistic Regression | Classical ML baseline | 0.73815 |
 | 3 | ELECTRA-base-discriminator | Pretrained transformer (fine-tuned) | 0.75519 |
+
+A simple **TF-IDF + Cosine Similarity baseline** (no training) was also built for reference, scoring 0.3119 on training data — confirming that all three trained models learn genuine patterns rather than relying on simple keyword overlap.
 
 ### 1. From-Scratch Model — BiLSTM + Attention
 - Custom vocabulary built directly from training data (no external tokenizer)
@@ -42,13 +58,25 @@ In this project I developed, trained, and evaluated three unique models — meet
 - Trained end-to-end with cross-entropy loss; evaluated using MAP@3
 
 ### 2. Logistic Regression (Classical ML)
-- TF-IDF / feature-based representation of prompt–option pairs
+- TF-IDF feature representation (unigrams to trigrams) of combined prompt + options text
 - Fast, interpretable baseline for comparison against deep learning approaches
+- Crosses the competition's qualifying MAP@3 cutoff (0.73)
 
 ### 3. ELECTRA-base-discriminator (Pretrained Transformer)
-- Fine-tuned `google/electra-base-discriminator` on the competition dataset
-- Best results achieved training on a T4 GPU (Tesla P100 had compatibility issues)
+- Fine-tuned `google/electra-base-discriminator` using `AutoModelForMultipleChoice`
+- Trained on a Kaggle T4 GPU
 - Highest-scoring model overall, demonstrating the strength of transfer learning for this task
+
+---
+
+## Exploratory Data Analysis
+
+Key checks performed before modeling (see `EDA.ipynb`):
+- No missing values found in the dataset
+- Duplicate prompts checked for label consistency
+- Correct-answer class distribution is mildly imbalanced (16%–24.5% across A–E), not severe
+- Prompt length (~17–19 words average) shows no correlation with the correct answer, ruling out a length-based shortcut
+- Vocabulary size calculated to inform embedding layer sizing for the from-scratch model
 
 ---
 
@@ -67,6 +95,8 @@ The from-scratch model is deployed as an interactive web app using Gradio on Hug
 
 Try it live: [huggingface.co/spaces/priyamtiwari948/smart-mcq-solver](https://huggingface.co/spaces/priyamtiwari948/smart-mcq-solver)
 
+Users can input any question and 5 options and get real-time top-3 ranked predictions with confidence scores.
+
 ---
 
 ## Tech Stack
@@ -76,7 +106,7 @@ Try it live: [huggingface.co/spaces/priyamtiwari948/smart-mcq-solver](https://hu
 - Hugging Face Transformers — ELECTRA fine-tuning
 - Weights & Biases — experiment tracking
 - Gradio + Hugging Face Spaces — deployment
-- Kaggle — training compute (T4 / T4x2 GPU) and competition submissions
+- Kaggle — training compute (T4 GPU) and competition submissions
 
 ---
 
