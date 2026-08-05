@@ -26,12 +26,14 @@ Prediction "C D A" → lowest score
 ## Repository Structure
 
 ```
-├── Kaggle_notebook.ipynb              # Complete end-to-end notebook (EDA → baseline → all 3 models → comparison)
+├── Deployment/                        # Gradio app + files for Hugging Face Spaces deployment
 ├── EDA.ipynb                          # Standalone exploratory data analysis
-├── baseline model.ipynb               # Baseline: TF-IDF + Cosine Similarity (no training)
-├── Logistic Regression.ipynb          # Model 1: TF-IDF + Logistic Regression
-├── Scratch model.ipynb                # Model 2: BiLSTM + Attention (built from scratch)
 ├── ELECTRA Base Discriminator.ipynb   # Model 3: Fine-tuned ELECTRA-base-discriminator
+├── Kaggle_notebook.ipynb              # Complete end-to-end notebook (EDA → baseline → all 3 models → comparison)
+├── Logistic Regression.ipynb          # Model 1: Word + Character TF-IDF + Logistic Regression
+├── Project_Report.pdf                 # Full project report (problem statement, models, results, conclusion)
+├── Scratch model.ipynb                # Model 2: BiLSTM + Attention (built from scratch)
+├── baseline model.ipynb               # Baseline: TF-IDF + Cosine Similarity (no training)
 └── README.md
 ```
 
@@ -44,7 +46,7 @@ I developed, trained, and evaluated three unique models — meeting the requirem
 | # | Model | Type | Kaggle MAP@3 Score |
 |---|-------|------|---------------------|
 | 1 | BiLSTM + Attention (from scratch) | Custom architecture, no pretrained weights | 0.71238 |
-| 2 | Logistic Regression | Classical ML baseline | 0.73815 |
+| 2 | Logistic Regression | Classical ML (Word + Character TF-IDF) | 0.704918 |
 | 3 | ELECTRA-base-discriminator | Pretrained transformer (fine-tuned) | 0.75519 |
 
 A simple **TF-IDF + Cosine Similarity baseline** (no training) was also built for reference, scoring 0.3119 on training data — confirming that all three trained models learn genuine patterns rather than relying on simple keyword overlap.
@@ -58,14 +60,31 @@ A simple **TF-IDF + Cosine Similarity baseline** (no training) was also built fo
 - Trained end-to-end with cross-entropy loss; evaluated using MAP@3
 
 ### 2. Logistic Regression (Classical ML)
-- TF-IDF feature representation (unigrams to trigrams) of combined prompt + options text
+- Two combined TF-IDF representations: word-level (unigrams to trigrams, 60,000 features) and character-level (3–5 character n-grams, 30,000 features)
+- Multinomial Logistic Regression classifier (C=5.0, class_weight='balanced')
+- Validated using a **GroupShuffleSplit** grouped by normalized prompt text, preventing near-duplicate prompts from leaking between train and validation sets
 - Fast, interpretable baseline for comparison against deep learning approaches
-- Crosses the competition's qualifying MAP@3 cutoff (0.73)
+- Crosses the competition's qualifying MAP@3 cutoff (0.73) on validation data
 
 ### 3. ELECTRA-base-discriminator (Pretrained Transformer)
 - Fine-tuned `google/electra-base-discriminator` using `AutoModelForMultipleChoice`
 - Trained on a Kaggle T4 GPU
 - Highest-scoring model overall, demonstrating the strength of transfer learning for this task
+
+---
+
+## Comparative Metrics (Validation Set)
+
+All four approaches were compared using common metrics — Accuracy, Macro F1-score, and MAP@3 — computed on a held-out validation set.
+
+| Model | Features | Acc (Val) | Macro F1 (Val) | MAP@3 (Val) |
+|---|---|---|---|---|
+| Baseline: TF-IDF + Cosine Similarity | TF-IDF vectors (unsupervised similarity) | 0.1370 | 0.1362 | 0.3119 |
+| BiLSTM + Attention (From Scratch) | Custom embeddings + BiLSTM + Attention | 0.8867 | 0.8932 | 0.9033 |
+| TF-IDF + Logistic Regression | Word TF-IDF + Char TF-IDF + GroupShuffleSplit | 0.7049 | 0.7106 | 0.7749 |
+| ELECTRA-base-discriminator | Pretrained WordPiece + Transformer | 0.9950 | 0.9958 | 0.9975 |
+
+Kaggle leaderboard MAP@3 (unseen test set) for the three main models is summarized in the table above ("Models Built" section).
 
 ---
 
@@ -85,7 +104,7 @@ Key checks performed before modeling (see `EDA.ipynb`):
 All three models were tracked using W&B, logging training/validation loss, accuracy, F1 score, and MAP@3 per epoch — enabling direct comparison across architectures.
 
 - Project: `smart-mcq-solver`
-- Runs compared: from-scratch BiLSTM, Logistic Regression, ELECTRA fine-tuning
+- Runs compared: from-scratch BiLSTM, Logistic Regression (word + character TF-IDF), ELECTRA fine-tuning
 
 ---
 
@@ -102,7 +121,7 @@ Users can input any question and 5 options and get real-time top-3 ranked predic
 ## Tech Stack
 
 - Python, PyTorch — from-scratch model implementation
-- scikit-learn — Logistic Regression baseline
+- scikit-learn — Logistic Regression (word + character TF-IDF)
 - Hugging Face Transformers — ELECTRA fine-tuning
 - Weights & Biases — experiment tracking
 - Gradio + Hugging Face Spaces — deployment
